@@ -33,8 +33,9 @@ from skimage.util import img_as_ubyte, invert, img_as_float64
 
 import time
 
+
 def visualize_sample(img, weights, sample_points):
-    fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3, figsize=(8,3),
+    fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3, figsize=(8, 3),
                                         sharex=True, sharey=True)
     ax1.imshow(img, cmap='gray')
     ax1.axis('off')
@@ -50,11 +51,11 @@ def visualize_sample(img, weights, sample_points):
     ax3.axis('off')
 
     fig.tight_layout()
-
     plt.show()
 
+
 def generate_sample_points(img, max_points):
-    '''
+    """
     Generates samples points for triangulation of a given image.
 
     Parameters
@@ -66,7 +67,7 @@ def generate_sample_points(img, max_points):
     -------
     list :
         The list of points to triangulate.
-    '''
+    """
     width = img.shape[0]
     height = img.shape[1]
     n = min(round(height * width * args.rate), max_points)
@@ -79,26 +80,27 @@ def generate_sample_points(img, max_points):
         weights = edge_entropy(img)
     t1 = time.perf_counter()
     if args.time:
-        print(f"Preprocess timer: {round(t1-t0, 3)} seconds.")
+        print(f"Preprocess timer: {round(t1 - t0, 3)} seconds.")
 
     print("Sampling...")
     t0 = time.perf_counter()
     if args.sample == 'threshold':
         threshold = args.threshold
-        sample_points =  threshold_sample(n, weights, threshold)
+        sample_points = threshold_sample(n, weights, threshold)
     elif args.sample == 'disk':
         sample_points = poisson_disk_sample(n, weights)
     t1 = time.perf_counter()
     if args.time:
-        print(f"Sample timer: {round(t1-t0, 3)} seconds.")
+        print(f"Sample timer: {round(t1 - t0, 3)} seconds.")
 
     if args.debug:
         visualize_sample(img, weights, sample_points)
-    corners = np.array([[0, 0], [0, height-1], [width-1, 0], [width-1, height-1]])
+    corners = np.array([[0, 0], [0, height - 1], [width - 1, 0], [width - 1, height - 1]])
     return np.append(sample_points, corners, axis=0)
 
+
 def approx_canny(img, blur):
-    '''
+    """
     Weights pixels based on an approximate canny edge-detection algorithm.
 
     Parameters
@@ -110,25 +112,25 @@ def approx_canny(img, blur):
 
     Returns
     -------
-    ndarray : 
+    ndarray :
         Noramlized weight matrix for pixel sampling.
-    '''
+    """
     edge_threshold = 3 / 256
 
     gray_img = rgb2gray(img)
-    blur_filt = np.ones(shape=(2*blur+1, 2*blur+1)) / ((2*blur+1) ** 2)
+    blur_filt = np.ones(shape=(2 * blur + 1, 2 * blur + 1)) / ((2 * blur + 1) ** 2)
     blurred = convolve2d(gray_img, blur_filt, mode='same', boundary='symm')
     edge_filt = np.array([[1, 1, 1], [1, -8, 1], [1, 1, 1]])
     edge = convolve2d(blurred, edge_filt, mode='same', boundary='symm')
     for idx, val in np.ndenumerate(edge):
         if val < edge_threshold:
             edge[idx] = 0
-    dense_filt = np.ones((3,3))
+    dense_filt = np.ones((3, 3))
     dense = convolve2d(edge, dense_filt, mode='same', boundary='symm')
     dense /= np.amax(dense)
 
     if args.debug:
-        fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3, figsize=(8,3),
+        fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3, figsize=(8, 3),
                                             sharex=True, sharey=True)
         ax1.imshow(blurred)
         ax1.axis('off')
@@ -143,8 +145,9 @@ def approx_canny(img, blur):
         plt.show()
     return dense
 
+
 def edge_entropy(img, bal=0.1):
-    '''
+    """
     Weights pixels based on a weighted edge-detection and entropy balance.
 
     Parameters
@@ -156,22 +159,22 @@ def edge_entropy(img, bal=0.1):
 
     Returns
     -------
-    ndarray : 
+    ndarray :
         Noramlized weight matrix for pixel sampling.
-    '''
+    """
     dn_img = skimage.restoration.denoise_tv_bregman(img, 0.1)
     img_gray = rgb2gray(dn_img)
     img_lab = rgb2lab(dn_img)
 
     entropy_img = gaussian(img_as_float64(dilation(entropy(img_as_ubyte(img_gray), disk(5)), disk(5))))
-    edges_img = dilation(np.mean(np.array([scharr(img_lab[:,:,channel]) for channel in range(3)]), axis=0), disk(3))
+    edges_img = dilation(np.mean(np.array([scharr(img_lab[:, :, channel]) for channel in range(3)]), axis=0), disk(3))
 
     weight = (bal * entropy_img) + ((1 - bal) * edges_img)
     weight /= np.mean(weight)
     weight /= np.amax(weight)
 
     if args.debug:
-        fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3, figsize=(8,3),
+        fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3, figsize=(8, 3),
                                             sharex=True, sharey=True)
         ax1.imshow(entropy_img)
         ax1.axis('off')
@@ -187,11 +190,12 @@ def edge_entropy(img, bal=0.1):
 
     return weight
 
+
 def poisson_disk_sample(n, weights, k=16):
-    '''
+    """
     Performs weighted poisson disk sampling over a region.
 
-    Algorithm based on 
+    Algorithm based on
     https://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf
 
     Weighted approach inspired by
@@ -205,12 +209,12 @@ def poisson_disk_sample(n, weights, k=16):
         Weights of grid to sample over. Assumes weights are normalized.
     k : int (optional)
         The number of attempts to sample an annulus before removing center.
-    
+
     Returns
     -------
     ist :
         List of sampled points
-    '''
+    """
     width = weights.shape[0]
     height = weights.shape[1]
 
@@ -244,8 +248,8 @@ def poisson_disk_sample(n, weights, k=16):
         for it in range(k):
             new_point = get_point_near(point, rads, max_rad)
 
-            if (in_bounds(new_point) and not 
-                has_neighbor(new_point, rads, tree)):
+            if (in_bounds(new_point) and not
+            has_neighbor(new_point, rads, tree)):
                 queue.append(new_point)
                 sample_points.append(new_point)
                 tree = KDTree(sample_points)
@@ -253,16 +257,17 @@ def poisson_disk_sample(n, weights, k=16):
                 break
 
         if not success:
-           queue.pop(idx)
-        
+            queue.pop(idx)
+
     print(f"Goal points: {n}")
     print(f"Generated {len(sample_points)} sample points with disk sampling.")
     print(f"{len(set(sample_points))} unique points.")
     return np.array(list(sample_points))
 
+
 def get_point_near(point, rads, max_rad):
-    '''
-    Randomly samples an annulus near a given point using a uniform 
+    """
+    Randomly samples an annulus near a given point using a uniform
     distribution.
 
     Parameters
@@ -273,20 +278,21 @@ def get_point_near(point, rads, max_rad):
         The lower bound for the random search.
     max_rad : int
         The upper bound for the random search.
-    
+
     Returns
     -------
     (int, int) :
         The nearby point.
-    '''
+    """
     rad = uniform(rads[point], max_rad)
     theta = uniform(0, 2 * np.pi)
-    new_point = (point[0] + rad * np.cos(theta), 
+    new_point = (point[0] + rad * np.cos(theta),
                  point[1] + rad * np.sin(theta))
     return (int(new_point[0]), int(new_point[1]))
 
+
 def threshold_sample(n, weights, threshold):
-    '''
+    """
     Sample the weighted points uniformly above a certain threshold.
 
     Parameters
@@ -302,7 +308,7 @@ def threshold_sample(n, weights, threshold):
     -------
     list :
         The list of points to triangulate.
-    '''
+    """
     candidates = np.array([idx for idx, weight in np.ndenumerate(weights) if weight >= threshold])
     if candidates.shape[0] < n:
         raise ValueError(f"Not enough candidate points for threshold {threshold}. "
@@ -311,8 +317,9 @@ def threshold_sample(n, weights, threshold):
     print(f"Generated {n} sample points with threshold sampling.")
     return candidates[choice(candidates.shape[0], size=n, replace=False)]
 
+
 def render(triangles, img, color_mode, fill_mode):
-    '''
+    """
     Generates samples points for triangulation of a given image.
 
     Parameters
@@ -321,28 +328,28 @@ def render(triangles, img, color_mode, fill_mode):
         The delaunay triangulation of the image
     img : np.array
         The image to create a low-polygon approximation.
-    '''
+    """
     t0 = time.perf_counter()
     low_poly = np.empty(shape=(2 * img.shape[0], 2 * img.shape[1], img.shape[2]), dtype=np.uint8)
 
     for triangle in triangles:
         if fill_mode == 'wire':
-            rr, cc = polygon_perimeter(2 * triangle[:,0], 2 * triangle[:,1], low_poly.shape)
+            rr, cc = polygon_perimeter(2 * triangle[:, 0], 2 * triangle[:, 1], low_poly.shape)
         elif fill_mode == 'solid':
-            rr, cc = polygon(2 * triangle[:,0], 2 * triangle[:,1], low_poly.shape)
+            rr, cc = polygon(2 * triangle[:, 0], 2 * triangle[:, 1], low_poly.shape)
 
         if color_mode == 'centroid':
             centroid = np.mean(triangle, axis=0, dtype=np.int32)
             color = img[tuple(centroid)]
         elif color_mode == 'mean':
-            color = np.mean(img[polygon(triangle[:,0], triangle[:,1], img.shape)], axis=0)
+            color = np.mean(img[polygon(triangle[:, 0], triangle[:, 1], img.shape)], axis=0)
 
-        low_poly[rr,cc] = color
+        low_poly[rr, cc] = color
     t1 = time.perf_counter()
     if args.time:
-        print(f"Render timer: {round(t1-t0, 3)} seconds.")
+        print(f"Render timer: {round(t1 - t0, 3)} seconds.")
 
-    fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(8,3),
+    fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(8, 3),
                                    sharex=True, sharey=True)
     ax1.imshow(img)
     ax1.axis('off')
@@ -350,11 +357,12 @@ def render(triangles, img, color_mode, fill_mode):
     ax2.imshow(low_poly)
     ax2.axis('off')
     fig.tight_layout()
-    #plt.show()
+    # plt.show()
 
     if args.save:
-        name = args.save_name if args.save_name is not None else f"{args.img.replace('.jpg','')}_tri.png"
+        name = args.save_name if args.save_name is not None else f"{args.img.replace('.jpg', '')}_tri.png"
         imsave(name, low_poly)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='''Perform delaunay triangulation 
@@ -364,7 +372,7 @@ if __name__ == "__main__":
     parser.add_argument('-sample', help="Sampling method for candidate points.",
                         type=str, default="threshold", choices=['disk', 'threshold'])
     parser.add_argument('-process', help="Pre-processing method to use.",
-                        type=str, default='approx-canny', choices=['approx-canny', 
+                        type=str, default='approx-canny', choices=['approx-canny',
                                                                    'edge-entropy'])
     parser.add_argument('-color', help="Coloring method for rendering.",
                         type=str, default='centroid', choices=['centroid', 'mean'])
@@ -394,7 +402,7 @@ if __name__ == "__main__":
     print(f"Using seed {np.random.get_state()[1][0]}.")
 
     # Actually do the code thing
-    img = imread(args.img)[:,:,:3]
+    img = imread(args.img)[:, :, :3]
     sample_points = generate_sample_points(img, args.max_points)
     print('Triangulating...')
     triangulation = Delaunay(sample_points)
