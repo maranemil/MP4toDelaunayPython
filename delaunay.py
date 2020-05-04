@@ -11,6 +11,15 @@ This module contains the methods need to triangulate an image using Delaunay
 Triangulation as the underlying algorithm.
 """
 
+#####################################################################
+#
+#   Perform Delaunay triangulation to create a low-polygon image approximations.
+#   https://github.com/pmaldonado/PyTri
+#   Author: Peter Maldonado
+#
+#####################################################################
+
+
 import argparse
 import numpy as np
 from numpy.random import randint, uniform, choice

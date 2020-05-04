@@ -11,7 +11,7 @@ Before | After |  *
 * sudo apt install ffmpeg -y
 * sudo apt install python3-pil python3-pil.imagetk -y
 
-* pip3 install matplotlib numpy scipy
+* pip3 install matplotlib numpy scipy Pillow scikit-image
 
 
 #### based on 

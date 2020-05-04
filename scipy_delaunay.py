@@ -1,18 +1,23 @@
 from scipy.spatial import Delaunay
 import numpy as np
-import random
 import PIL
 import PIL.Image as Image
 from PIL import ImageTk
 import graphics as g
-import time
 import PIL.ImageDraw as ImageDraw
 
 import argparse
-import random
 import time
 import os
-import glob
+import random
+
+#####################################################################
+#
+#   Uses Python's scipy module to triangulate an image
+#   Author: Calvin Davis
+#   https://github.com/MyNameIsCalvinDavis/PythonDelaunay
+#
+#####################################################################
 
 # catch arguments
 parser = argparse.ArgumentParser(description='Process.')
