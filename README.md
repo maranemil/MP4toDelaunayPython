@@ -1,6 +1,9 @@
 # MP4toDelaunayPython
 Video Converter from MP4 to Delaunay Output
 
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/cu44mofENR8/0.jpg)](https://www.youtube.com/watch?v=cu44mofENR8)
+
+
 #### requirements 
 * sudo apt install ffmpeg -y
 * sudo apt install python3-pil python3-pil.imagetk -y
