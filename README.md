@@ -3,7 +3,7 @@ Video Converter from MP4 to Delaunay Output
 
 
 
-Before | After |  *
+Video Before | Video After |  *
 --- | --- | ---
  [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/doLahRnMIUI/0.jpg)](https://www.youtube.com/watch?v=doLahRnMIUI) | [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/cu44mofENR8/0.jpg)](https://www.youtube.com/watch?v=cu44mofENR8) 
 
